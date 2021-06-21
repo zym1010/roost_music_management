@@ -40,6 +40,22 @@ def get_meta_data_alac(
                             element.tag
                         )
                     )
+                if element.text is None:
+                    # it's fine to have None data.
+                    # raise RuntimeError(
+                    #     "tag {} has bad data (None)".format(
+                    #         element.tag
+                    #     )
+                    # )
+                    pass
+                else:
+                    if ((element.text != element.text.strip()) or (len(element.text) == 0)):
+                        raise RuntimeError(
+                            "tag {} has bad data (empty or with trailing/tailing spaces) {}".format(
+                                element.tag, repr(element.text)
+                            )
+                        )
+
                 xml_ret[element.tag] = element.text
 
         if xml_ret[TAG_AUDIO_FORMAT] != 'alac':

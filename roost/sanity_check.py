@@ -84,6 +84,7 @@ def check_one_directory(root_dir, profile: DirectoryProfile):
     folder_ct = 0
     errors_all = []
     warnings_all = []
+    metadata_all = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
         # check there is no invalid character
         for dir_component in dirpath.split(path.sep):
@@ -130,9 +131,13 @@ def check_one_directory(root_dir, profile: DirectoryProfile):
                     )
                 )
 
+            metadata = get_meta_data_alac(join(root_dir, dirpath, filename))
+
             check_valid_metadata(
-                get_meta_data_alac(join(root_dir, dirpath, filename))
+                metadata
             )
+
+            metadata_all.append(metadata)
 
         if (folder_ct % 10 == 0) or (file_ct % 10 == 0):
             print(f'{folder_ct} folder scanned, {file_ct} files scanned')
@@ -142,4 +147,5 @@ def check_one_directory(root_dir, profile: DirectoryProfile):
         'file_ct': file_ct,
         'errors': errors_all,
         'warnings': warnings_all,
+        'metadata': metadata_all,
     }
