@@ -7,6 +7,7 @@ def extract_meta(file_name_full):
         check_output(
             # special characeters (<, >, etc.) are escaped,
             # and xml package will handle them correctly.
-            ["exiftool", "-X", file_name_full]
+            # '-n' will make time shown in raw seconds, rather than prettified HH:MM:SS.
+            ["exiftool", "-n", "-X", file_name_full]
         )
     )

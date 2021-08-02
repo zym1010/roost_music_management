@@ -3,6 +3,7 @@ from . import extract_meta
 
 QTItemListPrefix = '{http://ns.exiftool.org/QuickTime/ItemList/1.0/}'  # noqa
 TAG_AUDIO_FORMAT = '{http://ns.exiftool.org/QuickTime/Track1/1.0/}AudioFormat'  # noqa
+TAG_DURATION = '{http://ns.exiftool.org/QuickTime/Track1/1.0/}MediaDuration'  # noqa
 TAG_CHANNEL = '{http://ns.exiftool.org/QuickTime/Track1/1.0/}AudioChannels'  # noqa
 
 TAG_MAPPING_ALAC = {
@@ -17,6 +18,7 @@ TAG_MAPPING_ALAC = {
     Tag.TRACK_TOTAL: f"{QTItemListPrefix}TrackNumber",
     Tag.GENRE: f"{QTItemListPrefix}Genre",
     Tag.COMPOSER: f"{QTItemListPrefix}Composer",
+    Tag.DURATION: TAG_DURATION,
 }
 
 TAG_TO_CHECK = set(TAG_MAPPING_ALAC.values()) | {
@@ -90,6 +92,10 @@ def get_meta_data_alac(
         if str(year) != year_str:
             raise ValueError("improper year")
         ret[Tag.YEAR] = year
+
+        duration_in_sec = float(ret[Tag.DURATION])
+        assert duration_in_sec > 0
+        ret[Tag.DURATION] = duration_in_sec
 
         return ret
     except Exception as e:

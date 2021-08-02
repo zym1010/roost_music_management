@@ -3,6 +3,7 @@ from enum import Enum, auto
 
 class Tag(Enum):
     TITLE = auto()
+    DURATION = auto()
     ALBUM = auto()
     ARTIST = auto()
     ALBUM_ARTIST = auto()
@@ -26,6 +27,7 @@ CORE_TAGS = {
     Tag.TRACK_NO,
     Tag.TRACK_TOTAL,
     Tag.GENRE,
+    Tag.DURATION,
 }
 
 TagTypeMap = {
@@ -36,6 +38,7 @@ TagTypeMap = {
     Tag.DISC_NO: int,
     Tag.DISC_TOTAL: int,
     Tag.YEAR: int,
+    Tag.DURATION: float,  # in seconds.
     Tag.TRACK_NO: int,
     Tag.TRACK_TOTAL: int,
     Tag.GENRE: str,
@@ -53,6 +56,11 @@ def check_valid_metadata(extracted):
             if value is not None:
                 if type(value) is not TagTypeMap[tag]:
                     raise ValueError('{} is not of type {}'.format(repr(value), TagTypeMap[tag]))
+
+                if type(value) is str:
+                    assert value != ''
+                # TODO: more detailed checking can be done later.
+
     except Exception as e:
         raise RuntimeError(
             "invalid metadata {}".format(extracted), e

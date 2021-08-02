@@ -1,5 +1,6 @@
 """utilities to sanity check the library"""
 import os
+import stat
 from os import path
 from os.path import join
 from enum import Enum, auto
@@ -12,22 +13,10 @@ from .metadata import check_valid_metadata
 INVALID_CHARACTERS = r'<>:*/\|?*'
 
 
-class DirectoryProfile(Enum):
-    ITUNES = auto()
-
-
 class WarningType(Enum):
     # file name is not in NFKD form.
     # not necessarily bad.
     NON_NFKD_NAME = auto()
-
-
-class ErrorType(Enum):
-    # tags we care about
-    # (title, track, year, artist, album artist, disc, composer) is not unique
-    NON_UNIQUE_TAGS = auto()
-    # any of (title, track, year, artist, album artist, disc, composer) is missing or not in expected format.
-    CORE_TAGS_BROKEN = auto()
 
 
 class SanityCheckWarning:
@@ -44,18 +33,12 @@ class SanityCheckWarning:
         )
 
 
-class SanityCheckError:
-    def __init__(self, error_type: ErrorType, message: str):
-        assert type(error_type) is ErrorType
-        assert type(message) is str
-        self.error_type = error_type
-        self.message = message
+def valid_name(name):
+    return check_no_bad_space(name) and valid_smb_name(name)
 
-    def __repr__(self):
-        return 'SanityCheckError(ErrorType.{}, {})'.format(
-            self.error_type.name,
-            repr(self.message)
-        )
+
+def check_no_bad_space(name):
+    return (name.strip() == name) and '\n' not in name
 
 
 def valid_smb_name(name):
@@ -65,13 +48,21 @@ def valid_smb_name(name):
     return True
 
 
-def check_one_directory(root_dir, profile: DirectoryProfile):
+def fetch_cached_path_and_stat(metadata_cache, full_path):
+    if metadata_cache is None:
+        return
+
+    data = metadata_cache.get(full_path, None)
+    if data is None:
+        return
+
+    return data['path_and_stat']
+
+
+def check_one_directory(root_dir, metadata_cache=None):
     """
 
     :param root_dir: directory path.
-    :param profile: what kind of directory is being processed.
-        * ITUNES: it should be the `Music` folder under `Media`/`iTunes Media`. It should contain
-                  ONLY .m4a files and no file of any other extension.
     :return:
     """
 
@@ -79,65 +70,85 @@ def check_one_directory(root_dir, profile: DirectoryProfile):
     assert normalize('NFD', root_dir) == root_dir
     assert normalize('NFKD', root_dir) == root_dir
 
-    assert profile == DirectoryProfile.ITUNES
     file_ct = 0
     folder_ct = 0
-    errors_all = []
     warnings_all = []
     metadata_all = []
+    path_and_stat_all = []
+    extra_files_all = []
+
     for dirpath, dirnames, filenames in os.walk(root_dir):
         # check there is no invalid character
         for dir_component in dirpath.split(path.sep):
-            assert valid_smb_name(dir_component)
+            assert valid_name(dir_component)
 
         assert normalize('NFD', dirpath) == dirpath
 
         if normalize('NFKD', dirpath) != dirpath:
             warnings_all.append(
-                Warning(
+                SanityCheckWarning(
                     WarningType.NON_NFKD_NAME,
                     join(root_dir, dirpath)
                 )
             )
 
         for dirname in dirnames:
-            assert valid_smb_name(dirname)
+            assert valid_name(dirname)
 
         for filename in filenames:
-            assert valid_smb_name(filename)
+            assert valid_name(filename)
 
         folder_ct += 1
 
         for filename in filenames:
-            assert valid_smb_name(filename)
+            assert valid_name(filename)
             # ignore files starting with '.'
             if filename.startswith('.'):
                 continue
 
             file_ct += 1
 
-            assert path.splitext(filename)[1] == '.m4a'
-
             # check that it's properly NFD
             # this is probably guaranteed by Samba or Finder.
             assert normalize('NFD', filename) == filename
 
             # check more that there is not compatibility stuffs mixed in
+            full_path = join(root_dir, dirpath, filename)
             if normalize('NFKD', filename) != filename:
                 warnings_all.append(
-                    Warning(
+                    SanityCheckWarning(
                         WarningType.NON_NFKD_NAME,
-                        join(root_dir, dirpath, filename)
+                        full_path
                     )
                 )
 
-            metadata = get_meta_data_alac(join(root_dir, dirpath, filename))
+            p_and_stat = {
+                'path': full_path,
+                # this is guaranteed to be an integer.
+                'mtime': os.stat(full_path)[stat.ST_MTIME],
+                # this is guaranteed to be an integer.
+                'size': os.stat(full_path)[stat.ST_SIZE]
+            }
+
+            if fetch_cached_path_and_stat(metadata_cache, full_path) == p_and_stat:
+                metadata = metadata_cache[full_path]['metadata']
+            else:
+                ext_this = path.splitext(filename)[1]
+
+                if ext_this == '.m4a':
+                    metadata = get_meta_data_alac(full_path)
+                else:
+                    extra_files_all.append(
+                        full_path
+                    )
+                    continue
 
             check_valid_metadata(
                 metadata
             )
 
             metadata_all.append(metadata)
+            path_and_stat_all.append(p_and_stat)
 
         if (folder_ct % 10 == 0) or (file_ct % 10 == 0):
             print(f'{folder_ct} folder scanned, {file_ct} files scanned')
@@ -145,7 +156,8 @@ def check_one_directory(root_dir, profile: DirectoryProfile):
     return {
         'folder_ct': folder_ct,
         'file_ct': file_ct,
-        'errors': errors_all,
         'warnings': warnings_all,
         'metadata': metadata_all,
+        'path_and_stat': path_and_stat_all,
+        'extra_files': extra_files_all,
     }
