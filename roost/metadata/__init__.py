@@ -14,6 +14,7 @@ class Tag(Enum):
     TRACK_TOTAL = auto()
     GENRE = auto()
     COMPOSER = auto()
+    COVER_ART = auto()  # we only allow at most one cover art.
 
 
 CORE_TAGS = {
@@ -43,10 +44,21 @@ TagTypeMap = {
     Tag.TRACK_TOTAL: int,
     Tag.GENRE: str,
     Tag.COMPOSER: str,
+    Tag.COVER_ART: str,
 }
 
 
-def check_valid_metadata(extracted):
+def check_valid_metadata(extracted, ext):
+    if ext == '.iso':
+        assert type(extracted) is list
+        assert len(extracted) > 0
+        for extracted_inner in extracted:
+            check_valid_metadata_one(extracted_inner)
+    else:
+        check_valid_metadata_one(extracted)
+
+
+def check_valid_metadata_one(extracted):
     try:
         for tag in Tag:
             value = extracted[tag]
@@ -59,6 +71,7 @@ def check_valid_metadata(extracted):
 
                 if type(value) is str:
                     assert value != ''
+                    assert value == value.strip()
                 # TODO: more detailed checking can be done later.
 
     except Exception as e:

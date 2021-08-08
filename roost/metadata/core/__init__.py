@@ -2,6 +2,10 @@ from subprocess import check_output
 from xml.etree import ElementTree
 
 
+class ExtractionError(Exception):
+    pass
+
+
 def extract_meta(file_name_full):
     return ElementTree.fromstring(
         check_output(
