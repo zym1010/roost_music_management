@@ -5,7 +5,7 @@ import pickle
 import json
 
 
-def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task):
+def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task, ignore_dirs=None):
     makedirs(output_dir, exist_ok=False)
     if task == scanner.ScanType.CORE_METADATA:
         aux_output_dir = path.join(output_dir, 'images')
@@ -34,6 +34,7 @@ def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task):
         result_cache=result_cache,
         task=task,
         aux_output_dir=aux_output_dir,
+        ignore_dirs=ignore_dirs,
     )
 
     print(f'{stats_this_lib["folder_ct"]} folders, {stats_this_lib["file_ct"]} files')

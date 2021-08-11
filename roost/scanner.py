@@ -6,6 +6,7 @@ from os.path import join
 from enum import Enum, auto
 from unicodedata import normalize
 from .metadata.core.alac import get_meta_data_alac
+from .metadata.core.dsf import get_meta_data_dsf
 from .metadata import check_valid_metadata
 from .metadata.checksum import get_checksum_in_24bit, check_valid_checksum_output
 
@@ -67,7 +68,7 @@ def fetch_cached_path_and_stat(result_cache, full_path):
 
 def scan_one_directory(
         *, input_dir, aux_output_dir=None, result_cache=None,
-        task: ScanType,
+        task: ScanType, ignore_dirs=None,
 ):
     """
 
@@ -105,6 +106,10 @@ def scan_one_directory(
                     join(input_dir, dirpath)
                 )
             )
+
+        # ignore this path if needed
+        if (ignore_dirs is not None) and (join(input_dir, dirpath) in ignore_dirs):
+            continue
 
         for dirname in dirnames:
             assert valid_name(dirname)
@@ -151,6 +156,8 @@ def scan_one_directory(
                 if task == ScanType.CORE_METADATA:
                     if ext_this == '.m4a':
                         row_this = get_meta_data_alac(full_path, aux_output_dir)
+                    elif ext_this == '.dsf':
+                        row_this = get_meta_data_dsf(full_path, aux_output_dir)
                     else:
                         extra_files_all.append(
                             full_path
