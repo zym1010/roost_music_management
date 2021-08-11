@@ -8,7 +8,7 @@ from unicodedata import normalize
 from .metadata.core.alac import get_meta_data_alac
 from .metadata.core.dsf import get_meta_data_dsf
 from .metadata import check_valid_metadata
-from .metadata.checksum import get_checksum_in_24bit, check_valid_checksum_output
+from .metadata.checksum import get_checksum_in_24bit, check_valid_checksum_output, get_checksum_in_raw_stream
 
 # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN#file_and_directory_names
 # having these characters in the filename is very bad for SMB network sharing and archiving.
@@ -164,8 +164,10 @@ def scan_one_directory(
                         )
                         continue
                 elif task == ScanType.CHECKSUM:
-                    if ext_this in ('.m4a'):
+                    if ext_this in {'.m4a'}:
                         row_this = get_checksum_in_24bit(full_path)
+                    elif ext_this in {'.dsf'}:
+                        row_this = get_checksum_in_raw_stream(full_path)
                     else:
                         extra_files_all.append(
                             full_path
