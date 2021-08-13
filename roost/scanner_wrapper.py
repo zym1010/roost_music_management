@@ -1,9 +1,16 @@
 from os import makedirs
 from os import path
+from enum import Enum
 from . import scanner
+from .metadata import Tag
+from .metadata.checksum import ChecksumType
 import pickle
 import json
 
+task_to_enum_map = {
+    scanner.ScanType.CORE_METADATA: Tag,
+    scanner.ScanType.CHECKSUM: ChecksumType,
+}
 
 def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task, ignore_dirs=None):
     makedirs(output_dir, exist_ok=False)
@@ -15,16 +22,21 @@ def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task, ignor
 
     # previous_output_dir is used to build a cache for metadata
     if previous_output_dir is not None:
-        with open(path.join(previous_output_dir, 'full.pkl'), 'rb') as f_prev:
-            data_prev = pickle.load(f_prev)
-        # build using 'output' and 'path_and_stat'
-        assert len(data_prev['path_and_stat']) == len(data_prev['output'])
-        result_cache = {
-            p_and_s_this['path']: {
-                'path_and_stat': p_and_s_this,
-                'output': output_this,
-            } for (p_and_s_this, output_this) in zip(data_prev['path_and_stat'], data_prev['output'])
-        }
+        result_cache = dict()
+        enum_to_use: Enum = task_to_enum_map[task]
+        with open(path.join(previous_output_dir, 'main.json'), 'rt') as f_prev:
+            for line_this in f_prev:
+                json_this = json.loads(line_this)
+                json_this['output'] = {
+                    getattr(enum_to_use, k): v
+                    for k, v in json_this['output'].items()
+                }
+
+                json_this['path_and_stat'] = {
+                    k: (int(v) if k != 'path' else v) for k, v in json_this['path_and_stat'].items()
+                }
+
+                result_cache[json_this['path_and_stat']['path']] = json_this
     else:
         result_cache = None
 
