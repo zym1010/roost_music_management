@@ -1,8 +1,10 @@
 from hashlib import sha256
 from os.path import exists, join
-from .. import Tag
-from . import ExtractionError
+
 from mutagen.mp4 import MP4, MP4Tags, MP4Cover
+
+from . import ExtractionError
+from . import Tag
 
 
 def fetch_one_field(

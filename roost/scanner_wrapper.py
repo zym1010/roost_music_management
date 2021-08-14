@@ -1,16 +1,18 @@
+import json
+import pickle
+from enum import Enum
 from os import makedirs
 from os import path
-from enum import Enum
+
 from . import scanner
-from .metadata import Tag
 from .metadata.checksum import ChecksumType
-import pickle
-import json
+from .metadata.core import Tag
 
 task_to_enum_map = {
     scanner.ScanType.CORE_METADATA: Tag,
     scanner.ScanType.CHECKSUM: ChecksumType,
 }
+
 
 def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task, ignore_dirs=None):
     makedirs(output_dir, exist_ok=False)

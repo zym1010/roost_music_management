@@ -1,9 +1,11 @@
 from hashlib import sha256
 from os.path import exists, join
-from .. import Tag
-from . import ExtractionError
-from mutagen.id3 import ID3Tags, APIC
+
 from mutagen.dsf import DSF
+from mutagen.id3 import ID3Tags, APIC
+
+from . import ExtractionError
+from . import Tag
 
 
 def fetch_one_field(
