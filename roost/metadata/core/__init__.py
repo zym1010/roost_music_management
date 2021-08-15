@@ -78,8 +78,8 @@ def check_valid_metadata_one(extracted):
                     assert value == value.strip()
                     # let's handle this issue later on. all normalization forms are fine.
                     # we can normalize them internally later.
-                    # if not is_normalized('NFC', value):
-                    #     print(f'non NFC data {repr(value)}')
+                    if not (is_normalized('NFC', value) or is_normalized('NFD', value)):
+                        print(f'unnormalized Unicode data {repr(value)}')
                 # TODO: more detailed checking can be done later.
 
     except Exception as e:
