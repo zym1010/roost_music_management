@@ -4,7 +4,7 @@ import stat
 from os import path
 from os.path import join
 from enum import Enum, auto
-from unicodedata import normalize
+from unicodedata import is_normalized
 from .metadata.core.alac import get_meta_data_alac
 from .metadata.core.dsf import get_meta_data_dsf
 from .metadata.core import check_valid_metadata
@@ -82,8 +82,8 @@ def scan_one_directory(
     }[task]
 
     # our root dir should be properly named.
-    assert normalize('NFD', input_dir) == input_dir
-    assert normalize('NFKD', input_dir) == input_dir
+    assert is_normalized('NFD', input_dir)
+    assert is_normalized('NFKD', input_dir)
 
     file_ct = 0
     folder_ct = 0
@@ -97,9 +97,9 @@ def scan_one_directory(
         for dir_component in dirpath.split(path.sep):
             assert valid_name(dir_component)
 
-        assert normalize('NFD', dirpath) == dirpath
+        assert is_normalized('NFD', dirpath)
 
-        if normalize('NFKD', dirpath) != dirpath:
+        if not is_normalized('NFKD', dirpath):
             warnings_all.append(
                 SanityCheckWarning(
                     WarningType.NON_NFKD_NAME,
@@ -129,11 +129,11 @@ def scan_one_directory(
 
             # check that it's properly NFD
             # this is probably guaranteed by Samba or Finder.
-            assert normalize('NFD', filename) == filename
+            assert is_normalized('NFD', filename)
 
             # check more that there is not compatibility stuffs mixed in
             full_path = join(input_dir, dirpath, filename)
-            if normalize('NFKD', filename) != filename:
+            if not is_normalized('NFKD', filename):
                 warnings_all.append(
                     SanityCheckWarning(
                         WarningType.NON_NFKD_NAME,
