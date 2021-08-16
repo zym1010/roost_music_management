@@ -7,8 +7,14 @@ from enum import Enum, auto
 from unicodedata import is_normalized
 from .metadata.core.alac import get_meta_data_alac
 from .metadata.core.dsf import get_meta_data_dsf
+from .metadata.core.sacdiso import get_meta_data_sacd_iso
 from .metadata.core import check_valid_metadata
-from .metadata.checksum import get_checksum_in_24bit, check_valid_checksum_output, get_checksum_in_raw_stream
+from .metadata.checksum import (
+    get_checksum_in_24bit,
+    check_valid_checksum_output,
+    get_checksum_in_raw_stream,
+    get_checksum_in_raw_file,
+)
 
 # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN#file_and_directory_names
 # having these characters in the filename is very bad for SMB network sharing and archiving.
@@ -68,10 +74,9 @@ def fetch_cached_path_and_stat(result_cache, full_path):
 
 def scan_one_directory(
         *, input_dir, aux_output_dir=None, result_cache=None,
-        task: ScanType, ignore_dirs=None,
+        task: ScanType, ignore_dirs=None, overwrite_result_dict=None,
 ):
     """
-
     :param input_dir: directory path.
     :return:
     """
@@ -158,6 +163,11 @@ def scan_one_directory(
                         row_this = get_meta_data_alac(full_path, aux_output_dir)
                     elif ext_this == '.dsf':
                         row_this = get_meta_data_dsf(full_path, aux_output_dir)
+                    elif ext_this == '.iso':
+                        row_this = get_meta_data_sacd_iso(
+                            # sacd iso cannot embed image.
+                            full_path, overwrite_result_dict
+                        )
                     else:
                         extra_files_all.append(
                             full_path
@@ -168,6 +178,8 @@ def scan_one_directory(
                         row_this = get_checksum_in_24bit(full_path)
                     elif ext_this in {'.dsf'}:
                         row_this = get_checksum_in_raw_stream(full_path)
+                    elif ext_this in {'.iso'}:
+                        row_this = get_checksum_in_raw_file(full_path)
                     else:
                         extra_files_all.append(
                             full_path
@@ -176,9 +188,15 @@ def scan_one_directory(
                 else:
                     raise NotImplementedError
 
-            check_valid_result(
-                row_this, ext_this
-            )
+            try:
+                check_valid_result(
+                    row_this, ext_this
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"invalid output from {repr(full_path)}",
+                    e
+                )
 
             row_all.append(row_this)
             path_and_stat_all.append(p_and_stat)

@@ -14,7 +14,19 @@ task_to_enum_map = {
 }
 
 
-def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task, ignore_dirs=None):
+def if_list_output(
+        task, full_path
+):
+    if task == scanner.ScanType.CORE_METADATA:
+        return path.splitext(full_path)[1] == '.iso'
+    else:
+        return False
+
+
+def scan_one_dir(
+        *, input_dir, output_dir, previous_output_dir=None, task, ignore_dirs=None,
+        overwrite_result_dict=None,
+):
     makedirs(output_dir, exist_ok=False)
     if task == scanner.ScanType.CORE_METADATA:
         aux_output_dir = path.join(output_dir, 'images')
@@ -32,7 +44,12 @@ def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task, ignor
                 json_this['output'] = {
                     getattr(enum_to_use, k): v
                     for k, v in json_this['output'].items()
-                }
+                } if (not if_list_output(task, json_this['path_and_stat']['path'])) else [
+                    {
+                        getattr(enum_to_use, k): v
+                        for k, v in x.items()
+                    } for x in json_this['output']
+                ]
 
                 json_this['path_and_stat'] = {
                     k: (int(v) if k != 'path' else v) for k, v in json_this['path_and_stat'].items()
@@ -49,6 +66,7 @@ def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task, ignor
         task=task,
         aux_output_dir=aux_output_dir,
         ignore_dirs=ignore_dirs,
+        overwrite_result_dict=overwrite_result_dict,
     )
 
     print(f'{stats_this_lib["folder_ct"]} folders, {stats_this_lib["file_ct"]} files')
@@ -106,7 +124,12 @@ def scan_one_dir(*, input_dir, output_dir, previous_output_dir=None, task, ignor
                             # integers here won't be too big. so it's fine to encode them as is.
                             # TODO: make sure this is fine for any task
                             k.name: v for k, v in row_this.items()
-                        }
+                        } if (not if_list_output(task, path_and_stat_this['path'])) else [
+                            {
+                                k.name: v
+                                for k, v in x.items()
+                            } for x in row_this
+                        ]
                     },
                     allow_nan=False,
                 ) + '\n'

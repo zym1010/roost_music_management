@@ -64,6 +64,7 @@ def check_valid_metadata(extracted, ext):
 
 def check_valid_metadata_one(extracted):
     try:
+        assert extracted.keys() == set(Tag)
         for tag in Tag:
             value = extracted[tag]
             if tag in CORE_TAGS and value is None:
