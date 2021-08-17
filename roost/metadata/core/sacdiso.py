@@ -1,10 +1,10 @@
-from os.path import exists, join, isabs, splitext, dirname
+from os.path import join, isabs, splitext, dirname
 from os import walk
 from subprocess import check_call
 from tempfile import TemporaryDirectory
 from xml.etree import ElementTree
 
-from . import ExtractionError
+from .. import ExtractionError
 from . import Tag
 
 from ... import BIN_SACDEXTRACT

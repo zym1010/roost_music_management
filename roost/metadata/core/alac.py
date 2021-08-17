@@ -3,7 +3,7 @@ from os.path import exists, join
 
 from mutagen.mp4 import MP4, MP4Tags, MP4Cover
 
-from . import ExtractionError
+from .. import ExtractionError
 from . import Tag
 
 

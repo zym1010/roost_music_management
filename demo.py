@@ -19,6 +19,7 @@ def check(task: ScanType):
             task=task,
         )
 
+
 def check_again(task: ScanType):
     output_dir = task.name.lower()
     for dir_path in input_dirs:

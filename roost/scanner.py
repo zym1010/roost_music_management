@@ -24,6 +24,8 @@ INVALID_CHARACTERS = r'<>:*/\|?*'
 class ScanType(Enum):
     CORE_METADATA = auto()
     CHECKSUM = auto()
+    # ratings, comments, etc.
+    EXTRA_METADATA = auto()
 
 
 class WarningType(Enum):

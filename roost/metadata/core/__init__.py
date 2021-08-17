@@ -1,9 +1,7 @@
 from enum import Enum, auto
 from unicodedata import is_normalized
 
-class ExtractionError(Exception):
-    pass
-
+from .. import ExtractionError
 
 class Tag(Enum):
     TITLE = auto()
@@ -80,7 +78,7 @@ def check_valid_metadata_one(extracted):
                     # let's handle this issue later on. all normalization forms are fine.
                     # we can normalize them internally later.
                     if not (is_normalized('NFC', value) or is_normalized('NFD', value)):
-                        print(f'unnormalized Unicode data {repr(value)}')
+                        raise ExtractionError(f'unnormalized Unicode data {repr(value)}')
                 # TODO: more detailed checking can be done later.
 
     except Exception as e:
