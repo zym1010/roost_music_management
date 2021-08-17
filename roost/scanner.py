@@ -15,6 +15,9 @@ from .metadata.checksum import (
     get_checksum_in_raw_stream,
     get_checksum_in_raw_file,
 )
+from .metadata.extra import (
+    create_empty_extra_metadata
+)
 
 # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN#file_and_directory_names
 # having these characters in the filename is very bad for SMB network sharing and archiving.
@@ -182,6 +185,19 @@ def scan_one_directory(
                         row_this = get_checksum_in_raw_stream(full_path)
                     elif ext_this in {'.iso'}:
                         row_this = get_checksum_in_raw_file(full_path)
+                    else:
+                        extra_files_all.append(
+                            full_path
+                        )
+                        continue
+                elif task == ScanType.EXTRA_METADATA:
+                    if ext_this == '.m4a':
+                        row_this = get_extra_metadata_alac(
+                            full_path, overwrite_result_dict
+                        )
+                    elif ext_this in {'.dsf', '.iso'}:
+                        # just create empty rating.
+                        row_this = create_empty_extra_metadata()
                     else:
                         extra_files_all.append(
                             full_path
