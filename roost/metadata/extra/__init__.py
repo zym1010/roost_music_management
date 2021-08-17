@@ -1,5 +1,7 @@
+import plistlib
 from enum import Enum, auto
-from unicodedata import is_normalized
+from urllib.parse import urlparse, unquote
+from unicodedata import is_normalized, normalize
 from .. import ExtractionError
 
 
@@ -19,6 +21,31 @@ TagTypeMap = {
     Extra.HATE: bool,
     Extra.COMMENT: str,
 }
+
+
+def convert_itunes_xml(xml_path, comments_to_skip=None):
+    with open(xml_path, 'rb') as f_plist:
+        z = plistlib.load(f_plist)
+    ret = dict()
+    for track in z['Tracks'].values():
+        assert 'Location' in track
+        path_to_add = unquote(urlparse(track['Location']).path)
+        path_to_add = normalize('NFD', path_to_add)
+        assert path_to_add not in ret
+
+        meta_this = {
+            Extra.RATING: track.get('Rating', None),
+            Extra.LOVE: track.get('Loved', None),
+            Extra.HATE: track.get('Disliked', None),
+            Extra.COMMENT: track.get('Comments', None),
+        }
+
+        if comments_to_skip is not None and meta_this[Extra.COMMENT] in comments_to_skip:
+            meta_this[Extra.COMMENT] = None
+
+        ret[path_to_add] = meta_this
+
+    return ret
 
 
 def create_empty_extra_metadata():
@@ -46,9 +73,11 @@ def check_valid_extra_metadata_one(extracted):
                 if type(value) is not TagTypeMap[tag]:
                     raise ValueError('{} is not of type {}'.format(repr(value), TagTypeMap[tag]))
 
+                if type(value) is int:
+                    assert value in {20, 40, 60, 80, 100}
+
                 if type(value) is str:
                     assert value != ''
-                    assert value == value.strip()
                     # let's handle this issue later on. all normalization forms are fine.
                     # we can normalize them internally later.
                     if not (is_normalized('NFC', value) or is_normalized('NFD', value)):

@@ -16,7 +16,8 @@ from .metadata.checksum import (
     get_checksum_in_raw_file,
 )
 from .metadata.extra import (
-    create_empty_extra_metadata
+    create_empty_extra_metadata,
+    check_valid_extra_metadata
 )
 
 # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN#file_and_directory_names
@@ -89,6 +90,7 @@ def scan_one_directory(
     check_valid_result = {
         ScanType.CORE_METADATA: check_valid_metadata,
         ScanType.CHECKSUM: check_valid_checksum_output,
+        ScanType.EXTRA_METADATA: check_valid_extra_metadata,
     }[task]
 
     # our root dir should be properly named.
@@ -192,9 +194,7 @@ def scan_one_directory(
                         continue
                 elif task == ScanType.EXTRA_METADATA:
                     if ext_this == '.m4a':
-                        row_this = get_extra_metadata_alac(
-                            full_path, overwrite_result_dict
-                        )
+                        row_this = overwrite_result_dict[full_path]
                     elif ext_this in {'.dsf', '.iso'}:
                         # just create empty rating.
                         row_this = create_empty_extra_metadata()

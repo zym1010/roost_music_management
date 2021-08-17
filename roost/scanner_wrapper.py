@@ -7,10 +7,12 @@ from os import path
 from . import scanner
 from .metadata.checksum import ChecksumType
 from .metadata.core import Tag
+from .metadata.extra import Extra
 
 task_to_enum_map = {
     scanner.ScanType.CORE_METADATA: Tag,
     scanner.ScanType.CHECKSUM: ChecksumType,
+    scanner.ScanType.EXTRA_METADATA: Extra,
 }
 
 
