@@ -14,13 +14,22 @@ task_to_enum_map = {
 }
 
 
-def if_list_output(
-        task, full_path
-):
-    if task == scanner.ScanType.CORE_METADATA:
-        return path.splitext(full_path)[1] == '.iso'
+def decode_output(enum_to_use, output):
+    if type(output) is dict:
+        return {getattr(enum_to_use, k): v for k, v in output.items()}
+    elif type(output) is list:
+        return [decode_output(enum_to_use, x) for x in output]
     else:
-        return False
+        raise TypeError
+
+
+def encode_output(output):
+    if type(output) is dict:
+        return {k.name: v for k, v in output.items()}
+    elif type(output) is list:
+        return [encode_output(x) for x in output]
+    else:
+        raise TypeError
 
 
 def scan_one_dir(
@@ -41,20 +50,10 @@ def scan_one_dir(
         with open(path.join(previous_output_dir, 'main.json'), 'rt') as f_prev:
             for line_this in f_prev:
                 json_this = json.loads(line_this)
-                json_this['output'] = {
-                    getattr(enum_to_use, k): v
-                    for k, v in json_this['output'].items()
-                } if (not if_list_output(task, json_this['path_and_stat']['path'])) else [
-                    {
-                        getattr(enum_to_use, k): v
-                        for k, v in x.items()
-                    } for x in json_this['output']
-                ]
-
+                json_this['output'] = decode_output(enum_to_use, json_this['output'])
                 json_this['path_and_stat'] = {
                     k: (int(v) if k != 'path' else v) for k, v in json_this['path_and_stat'].items()
                 }
-
                 result_cache[json_this['path_and_stat']['path']] = json_this
     else:
         result_cache = None
@@ -120,16 +119,7 @@ def scan_one_dir(
                             # it has many large integers... good to save them as str.
                             k: str(v) for k, v in path_and_stat_this.items()
                         },
-                        'output': {
-                            # integers here won't be too big. so it's fine to encode them as is.
-                            # TODO: make sure this is fine for any task
-                            k.name: v for k, v in row_this.items()
-                        } if (not if_list_output(task, path_and_stat_this['path'])) else [
-                            {
-                                k.name: v
-                                for k, v in x.items()
-                            } for x in row_this
-                        ]
+                        'output': encode_output(row_this)
                     },
                     allow_nan=False,
                 ) + '\n'
