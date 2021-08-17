@@ -11,7 +11,6 @@ input_dirs = [
 # from dsd_overwrite import overwrite_result_dict
 overwrite_result_dict = None
 
-
 def check(task: ScanType):
     output_dir = task.name.lower()
     for dir_path in input_dirs:

@@ -93,6 +93,14 @@ def fetch_album_and_area(xml_obj):
     return album, area
 
 
+def get_total_tracks(file_name_full):
+    xml_obj = fetch_sacd_xml(file_name_full)
+    album, area = fetch_album_and_area(xml_obj)
+    total_tracks = int(area.attrib['totaltracks'])
+    assert len(area) == total_tracks
+    return total_tracks
+
+
 def get_meta_data_sacd_iso(
         file_name_full,
         overwrite_result_dict=None,

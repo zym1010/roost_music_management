@@ -7,7 +7,7 @@ from enum import Enum, auto
 from unicodedata import is_normalized
 from .metadata.core.alac import get_meta_data_alac
 from .metadata.core.dsf import get_meta_data_dsf
-from .metadata.core.sacdiso import get_meta_data_sacd_iso
+from .metadata.core.sacdiso import get_meta_data_sacd_iso, get_total_tracks
 from .metadata.core import check_valid_metadata
 from .metadata.checksum import (
     get_checksum_in_24bit,
@@ -195,9 +195,14 @@ def scan_one_directory(
                 elif task == ScanType.EXTRA_METADATA:
                     if ext_this == '.m4a':
                         row_this = overwrite_result_dict[full_path]
-                    elif ext_this in {'.dsf', '.iso'}:
+                    elif ext_this == '.dsf':
                         # just create empty rating.
                         row_this = create_empty_extra_metadata()
+                    elif ext_this == '.iso':
+                        # check how many tracks are there, and then create a list
+                        row_this = [
+                            create_empty_extra_metadata()
+                        ] * get_total_tracks(full_path)
                     else:
                         extra_files_all.append(
                             full_path
