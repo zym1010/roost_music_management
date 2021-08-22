@@ -9,6 +9,7 @@
 
 # then we can have as many sheets as we like.
 # basically smart playlists.
+import pickle
 from collections import defaultdict
 import json
 from unicodedata import normalize
@@ -43,7 +44,7 @@ class Track:
 
     @property
     def album_key(self):
-        return self.core_metadata['ALBUM'], self.core_metadata['ALBUM_ARTIST']
+        return self.core_metadata['ALBUM_ARTIST'], self.core_metadata['ALBUM']
 
     @property
     def track_key(self):
@@ -53,13 +54,17 @@ class Track:
 class TrackManager:
     def __init__(self):
         self.track_dict = dict()
+        self.id_to_key = dict()
 
     def add_track(self, track):
         assert track.track_key not in self.track_dict
+        new_id = len(self.track_dict)
         self.track_dict[track.track_key] = {
-            'id': len(self.track_dict),
+            'id': new_id,
             'track': track,
         }
+        assert new_id not in self.id_to_key
+        self.id_to_key[new_id] = track.track_key
 
     def export_to_sheet(self, sheet: Worksheet):
         demo_track: Track = next(iter(self.track_dict.values()))['track']
@@ -83,15 +88,18 @@ class AlbumManager:
     def __init__(self):
         # disambiguate albums using raw album  name + album artist
         self.album_dict = dict()
+        self.id_to_key = dict()
 
     def add_track(self, track: Track):
         key = track.album_key
-
         if key not in self.album_dict:
+            new_id = len(self.album_dict)
             self.album_dict[key] = {
-                'id': len(self.album_dict),
+                'id': new_id,
                 'tracks': [],
             }
+            assert new_id not in self.id_to_key
+            self.id_to_key[new_id] = key
 
         self.album_dict[key]['tracks'].append(track)
 
@@ -228,6 +236,15 @@ def main():
 
     # save
     wb.save(output)
+
+    # dump two manaagers
+    with open('demo_excel.pkl', 'wb') as f:
+        pickle.dump(
+            {
+                'track_manager': track_manager,
+                'album_manager': album_manager,
+            }, f
+        )
 
 
 if __name__ == '__main__':
