@@ -81,6 +81,7 @@ def fetch_cached_path_and_stat(result_cache, full_path):
 def scan_one_directory(
         *, input_dir, aux_output_dir=None, result_cache=None,
         task: ScanType, ignore_dirs=None, overwrite_result_dict=None,
+        update_multi_value_fields = False,
 ):
     """
     :param input_dir: directory path.
@@ -167,7 +168,9 @@ def scan_one_directory(
             else:
                 if task == ScanType.CORE_METADATA:
                     if ext_this == '.m4a':
-                        row_this = get_meta_data_alac(full_path, aux_output_dir)
+                        row_this = get_meta_data_alac(
+                            full_path, aux_output_dir, update_multi_value_fields=update_multi_value_fields
+                        )
                     elif ext_this == '.dsf':
                         row_this = get_meta_data_dsf(full_path, aux_output_dir)
                     elif ext_this == '.iso':

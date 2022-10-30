@@ -13,7 +13,7 @@ class ChecksumType(Enum):
 
 def get_checksum_in_24bit(file_name_full):
     # use ffmpeg to check raw audio stream's sha, converted to 24bit `pcm_s24le`
-    # this is sufficient for pratically all non-DSD files.
+    # this is sufficient for practically all non-DSD files.
     ffmpeg_output = check_output(
         [
             BIN_FFMPEG,

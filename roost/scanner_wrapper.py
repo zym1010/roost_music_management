@@ -36,7 +36,7 @@ def encode_output(output):
 
 def scan_one_dir(
         *, input_dir, output_dir, previous_output_dir=None, task, ignore_dirs=None,
-        overwrite_result_dict=None,
+        overwrite_result_dict=None, update_multi_value_fields=False,
 ):
     makedirs(output_dir, exist_ok=False)
     if task == scanner.ScanType.CORE_METADATA:
@@ -68,6 +68,7 @@ def scan_one_dir(
         aux_output_dir=aux_output_dir,
         ignore_dirs=ignore_dirs,
         overwrite_result_dict=overwrite_result_dict,
+        update_multi_value_fields=update_multi_value_fields,
     )
 
     print(f'{stats_this_lib["folder_ct"]} folders, {stats_this_lib["file_ct"]} files')
@@ -84,6 +85,10 @@ def scan_one_dir(
         'aux_output_dir',
         'task',
     }
+
+    # this is useful for iTunes library where we don't expect to have any extra files.
+    # pls turn this off when dealing with non-iTunes libraries
+    assert len(stats_this_lib['extra_files']) == 0, 'no extra file'
 
     # pickle version
     with open(path.join(output_dir, 'full.pkl'), 'wb') as f_pkl:
