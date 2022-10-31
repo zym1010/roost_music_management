@@ -130,25 +130,35 @@ def get_meta_data_alac(
         )
 
     if update_multi_value_fields:
-        # get all artists from the standard tag.
-        artist_all = [x.strip() for x in ret[Tag.ARTIST].split(';')]
-        assert len(artist_all) > 0
-        assert all(map(lambda x: len(x) > 0, artist_all))
-        assert len(artist_all) == len(set(artist_all))
-        artist_all = set(artist_all)
+        try:
+            # get all artists from the standard tag.
+            artist_all = [x.strip() for x in ret[Tag.ARTIST].split(';')]
+            assert len(artist_all) > 0
+            assert all(map(lambda x: len(x) > 0, artist_all))
+            assert len(artist_all) == len(set(artist_all))
+            artist_all = set(artist_all)
 
-        # get all artists from ----:com.apple.iTunes:artistIndividual
-        artist_all_proper = mp4_obj.get('----:com.apple.iTunes:artistIndividual', [])
-        artist_all_proper = [x.decode('utf-8') for x in artist_all_proper]
-        assert all(map(lambda x: len(x) > 0, artist_all_proper))
-        assert len(artist_all_proper) == len(set(artist_all_proper))
-        artist_all_proper = set(artist_all_proper)
+            # get all artists from ----:com.apple.iTunes:artistIndividual
+            artist_all_proper = mp4_obj.get('----:com.apple.iTunes:artistIndividual', [])
+            artist_all_proper = [x.decode('utf-8') for x in artist_all_proper]
+            assert all(map(lambda x: len(x) > 0, artist_all_proper))
+            assert len(artist_all_proper) == len(set(artist_all_proper))
+            artist_all_proper = set(artist_all_proper)
 
-        if artist_all != artist_all_proper:
-            # overwrite artist_all_proper using artist_all, in sorted order
-            mp4_obj['----:com.apple.iTunes:artistIndividual'] = [
-                MP4FreeForm(x.encode('utf-8')) for x in sorted(artist_all)
-            ]
-            mp4_obj.save()
+            if len(artist_all) == 1 and '----:com.apple.iTunes:artistIndividual' in mp4_obj:
+                # if there's only one artist, no need to have this field.
+                raise RuntimeError('should not come here!!!')
+                del mp4_obj['----:com.apple.iTunes:artistIndividual']
+                mp4_obj.save()
+            elif len(artist_all) > 1 and artist_all != artist_all_proper:
+                # overwrite artist_all_proper using artist_all, in sorted order
+                mp4_obj['----:com.apple.iTunes:artistIndividual'] = [
+                    MP4FreeForm(x.encode('utf-8')) for x in sorted(artist_all)
+                ]
+                mp4_obj.save()
+        except Exception as e:
+            raise ExtractionError(
+                "encountered error processing {}".format(file_name_full), e
+            )
 
     return ret
