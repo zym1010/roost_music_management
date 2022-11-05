@@ -116,12 +116,12 @@ def scan_one_directory(
             warnings_all.append(
                 SanityCheckWarning(
                     WarningType.NON_NFKD_NAME,
-                    join(input_dir, dirpath)
+                    dirpath
                 )
             )
 
         # ignore this path if needed
-        if (ignore_dirs is not None) and (join(input_dir, dirpath) in ignore_dirs):
+        if (ignore_dirs is not None) and (dirpath in ignore_dirs):
             continue
 
         for dirname in dirnames:
@@ -145,7 +145,7 @@ def scan_one_directory(
             assert is_normalized('NFD', filename)
 
             # check more that there is not compatibility stuffs mixed in
-            full_path = join(input_dir, dirpath, filename)
+            full_path = join(dirpath, filename)
             if not is_normalized('NFKD', filename):
                 warnings_all.append(
                     SanityCheckWarning(
