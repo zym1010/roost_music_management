@@ -36,6 +36,7 @@ def encode_output(output):
 
 def scan_one_dir(
         *, input_dir, output_dir, previous_output_dir=None, task, ignore_dirs=None,
+        ignore_dirs_fn=None,
         overwrite_result_dict=None, update_multi_value_fields=False,
 ):
     makedirs(output_dir, exist_ok=False)
@@ -69,6 +70,7 @@ def scan_one_dir(
         ignore_dirs=ignore_dirs,
         overwrite_result_dict=overwrite_result_dict,
         update_multi_value_fields=update_multi_value_fields,
+        ignore_dirs_fn=ignore_dirs_fn,
     )
 
     print(f'{stats_this_lib["folder_ct"]} folders, {stats_this_lib["file_ct"]} files')

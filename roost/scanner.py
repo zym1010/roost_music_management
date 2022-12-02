@@ -5,7 +5,9 @@ from os import path
 from os.path import join
 from enum import Enum, auto
 from unicodedata import is_normalized
+from mutagen.flac import FLAC
 from .metadata.core.alac import get_meta_data_alac
+from .metadata.core.flac import get_meta_data_flac
 from .metadata.core.dsf import get_meta_data_dsf
 from .metadata.core.sacdiso import get_meta_data_sacd_iso, get_total_tracks
 from .metadata.core import check_valid_metadata
@@ -80,7 +82,7 @@ def fetch_cached_path_and_stat(result_cache, full_path):
 
 def scan_one_directory(
         *, input_dir, aux_output_dir=None, result_cache=None,
-        task: ScanType, ignore_dirs=None, overwrite_result_dict=None,
+        task: ScanType, ignore_dirs=None, ignore_dirs_fn=None, overwrite_result_dict=None,
         update_multi_value_fields = False,
 ):
     """
@@ -122,6 +124,9 @@ def scan_one_directory(
 
         # ignore this path if needed
         if (ignore_dirs is not None) and (dirpath in ignore_dirs):
+            continue
+
+        if (ignore_dirs_fn is not None) and ignore_dirs_fn(dirpath):
             continue
 
         for dirname in dirnames:
@@ -171,6 +176,10 @@ def scan_one_directory(
                         row_this = get_meta_data_alac(
                             full_path, aux_output_dir, update_multi_value_fields=update_multi_value_fields
                         )
+                    elif ext_this == '.flac':
+                        row_this = get_meta_data_flac(
+                            full_path, aux_output_dir
+                        )
                     elif ext_this == '.dsf':
                         row_this = get_meta_data_dsf(full_path, aux_output_dir)
                     elif ext_this == '.iso':
@@ -186,6 +195,10 @@ def scan_one_directory(
                 elif task == ScanType.CHECKSUM:
                     if ext_this in {'.m4a'}:
                         row_this = get_checksum_in_24bit(full_path)
+                    elif ext_this in {'.flac'}:
+                        # no need to cover it as long as the signature is valid.
+                        assert FLAC(full_path).info.md5_signature > 0
+                        continue
                     elif ext_this in {'.dsf'}:
                         row_this = get_checksum_in_raw_stream(full_path)
                     elif ext_this in {'.iso'}:
